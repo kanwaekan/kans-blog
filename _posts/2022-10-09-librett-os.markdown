@@ -31,7 +31,7 @@ Again, a bit of exaggeration, but basically it tries to convey that, interproces
 
 
 #### Kernel Bypass and LibOS
-![DPDK]()
+![DPDK](https://raw.githubusercontent.com/kanwaekan/kans-blog/main/6we123.png)
 
 Eliminates layers of abstraction and indirection by directly allowing the application to interface with hardware. Interrupts are now directly passed to the userspace without any interrupt processing, and CPU mode switch isn't necessary since application owns resource exclusively.
 
@@ -41,6 +41,7 @@ Libraries aren't conformed to any standards thus can be better designed to cater
 Requires kernel to undertake the responsibility of a resource arbiter.
 
 #### Unikernel
+![Rumprun](https://github.com/kanwaekan/kans-blog/blob/main/rumparch.png)
 
 Unikernel does not have any bloat of the traditional operating system and provides an minimalistic environment and a runtime with a singlular address space for applications to run. Single Address avoid mode switches between user and kernel modue. They're bundled with application along the libOS which, drastically reduces dependencies required unlike a traditional operating system which is intended to be multipurpose; has support for almost all. 
 
@@ -48,20 +49,22 @@ Thus it provides us a viable candidate to develop suite of application isolated 
 
 ### Overarching Idea
 
-LibOS uses microkernel architecture by separating core drivers as user-space modules.
+LibOS uses microkernel architecture at its core by separating core drivers as user-space modules. Application get services from using dedicated servers or directly use the underlying hardware.
 
 ### Implementation Details
 
 #### SR-IOV(Single Root Input/Output Virtualization):
+![SR-IOV](https://honser.github.io/images/sriov_overview2.png)
 
 An extension to PCI-E specification allows PCI-E resources to advertise themselves as a set of Multiple Virtual Interfaces providing Dedicated Isolated. SR-IOV provides two PCI functions:
 
 - Physical Function(PF) provides functionalities of a conventional PCI-E while providing a mechanism to manage SR-IOV functionality.
 - Virtual Function(VF) can function as a normal PCI-E device that can restrict one or more functions; unlike software virtualization, hardware-assisted virtualization provides dedicated buffers, _application_ mapped interrupts and DMA streams.
 
-Virtual Interfaces are limited in number, and must be used conservatively.
+Virtual Interfaces are limited in number, and must be used conservatively. The Kernel manages devices through Physical Function and allocates Virtual Device to Applications.
 
 #### Anykernel & Rump Kernel
+![Rumpkernel](https://upload.wikimedia.org/wikipedia/en/4/4b/OS_rumparch.png)
 
 Rump Kernel is the Unikernel discussed, for POSIX compatibility, application receives call from program through libc which is handled by rump kernel. Rump kernel is the conceptual fruit of anykernel concept which aims for creating drivers that is OS agnostic.
 The Kernel interface with the hardware through rumprun.
@@ -69,8 +72,6 @@ The Kernel interface with the hardware through rumprun.
 #### IOMMU
 
 IOMMU is provides hardware security in addition to the numerable features it provides. PCI-E device are mapped to VMs which disallows out-of-bound memory access and interrupts. We route SR-IOV's virtual function in tandem with IOMMU.
-
-#### Hypervisor
 
 ### Design
 
