@@ -63,8 +63,8 @@ An extension to PCI-E specification allows PCI-E resources to advertise themselv
 
 Virtual Interfaces are limited in number, and must be used conservatively. The Kernel manages devices through Physical Function and allocates Virtual Device to Applications.
 
-#### Anykernel & Rump Kernel
-![Rumpkernel](https://upload.wikimedia.org/wikipedia/en/4/4b/OS_rumparch.png)
+#### Rump Kernel
+![Rumpkernel](https://raw.githubusercontent.com/kanwaekan/kans-blog/main/rumparch.png)
 
 Rump Kernel is the Unikernel discussed, for POSIX compatibility, application receives call from program through libc which is handled by rump kernel. Rump kernel is the conceptual fruit of anykernel concept which aims for creating drivers that is OS agnostic.
 The Kernel interface with the hardware through rumprun.
@@ -85,9 +85,4 @@ POSIX Compatibility
 - A Hypervisor assumes the role of a manager which apart from setting up and monitoring individual rumpinstances, provides access to Virtual Functions and aids in dynamic mode switch by maintain global data of IPs, interfaces etc.
 - Rumprun instances schedule its process under a Virtual CPU, which in turn is scheduled by the hypervisor.
 
-### References:
 
-- https://www.lynx.com/embedded-systems-learning-center/what-is-sr-iov-and-why-is-it-important-for-embedded-devices
-- https://learn.microsoft.com/en-us/windows-hardware/drivers/network/overview-of-single-root-i-o-virtualization–sr-iov-
-
-##
