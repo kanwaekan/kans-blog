@@ -4,14 +4,17 @@ Oct 9, 2022
 
 ### Gist of the Blog
 
-**Monolithic OS** has several shortcomings be it **performance**, **security** concerns of modules in **kernel address space**, or failure to **recover** from a fault/crash. **Libertt OS** tries to address these issues by delegating some traditional **kernel responsibilities** as **services** in the user space, allowing applications to dynamically switch to **dedicated libraries**(libOS) that directly interact with physical hardware on runtime, recoverability, runtime upgrades and much more…
+**Monolithic OS** has several shortcomings be it **performance**, **security** concerns of modules in **kernel address space**, or failure to **recover** from a fault/crash. **Libertt OS** tries to address these issues by delegating some traditional **kernel responsibilities** as **services** in the user space, allowing applications to dynamically switch to between physical and virtualized hardware interface on runtime, recoverability, runtime upgrades and much more…
 
 ### Here are a few things to discuss before setout
 
-#### What is a Monolithic Kernel?
+#### What's Kernel?
+Kernel as the name implies, is the core part of Operating System that has virtually complete control over the system. Over the years, different kernel architechture evolved aimed at assigning responsibilities of a kernel.
+
+#### What is a Monolithic Kernel then?
 ![Monolithic Kernel](https://wiki.osdev.org/images/a/aa/Monolithic.png)
 
-OS tries to provide every conceivable service(a bit of exaggeration, of course) as an ingrained generic driver/module under one bundle. This can quickly lead to bloated code, which isn't tailored to meet application quirks. With a large surface area, attackers can exploit poorly designed modules. Furthermore, overarching responsibilities and promises inhibit the ability to redesign and integrate new ideas.
+Kernel tries to provide every conceivable service(a bit of exaggeration, of course) as an ingrained generic driver/module under one bundle. This can quickly lead to bloated code, which isn't tailored to meet application quirks. With a large surface area, attackers can exploit poorly designed modules. Furthermore, overarching responsibilities and promises inhibit the ability to redesign and integrate new ideas.
 ![Problems](https://raw.githubusercontent.com/kanwaekan/kans-blog/main/6wcl94.jpg)
 
 
@@ -19,7 +22,7 @@ OS tries to provide every conceivable service(a bit of exaggeration, of course) 
 #### Does Microkernel save the day?
 ![Microkernel](https://wiki.osdev.org/images/2/28/Microkernel.png)
 
-Less on steroids, take a more conservative approach in undertaking kernel responsibilities. Microkernel provides **device drivers** used by applications in the Userland. This leads to the isolation of services, and increased kernel security. Failures of the Driver wouldn't (and should not) affect the kernel, and therefore, it localizes failures to the application using it. Upgrading a Service could be just as easy as shutting down and running the new one in its stead.
+Less on steroids, take a more conservative approach in undertaking kernel responsibilities. Microkernel provides services such as **device drivers** used by applications in the userland as **servers**. This leads to the isolation of services, and increased kernel security. Failures of the Driver wouldn't (and should not) affect the kernel, and therefore, it localizes failures to the application using it. Upgrading a Service could be just as easy as shutting down and running the new one in its stead.
 
 So why is it not ubiquitous, then? Could it be Easily Summarized in a meme?
 ![Toni! Toni!](https://raw.githubusercontent.com/kanwaekan/kans-blog/main/6wal21.jpg)
@@ -27,17 +30,21 @@ So why is it not ubiquitous, then? Could it be Easily Summarized in a meme?
 Again, a bit of exaggeration, but basically it tries to convey that, interprocess communication has a penalty; if the apps try to communicate with multiple services (which, in turn, might use IPC themselves) very frequently(like I/O processes), the amount of useful work carried out by it is less.
 
 
-#### Service Bypass
+#### Kernel Bypass and LibOS
+![DPDK]()
 
-Eliminate layers of abstraction on indirection by directly allowing the application to interface with hardware. However, handling multiple applications coordinating multiple applications to use the same hardware requires support from the hardware. See SR-IOV. Should we have to handcraft drivers for our application, then?
+Eliminates layers of abstraction and indirection by directly allowing the application to interface with hardware. Interrupts are now directly passed to the userspace without any interrupt processing, and CPU mode switch isn't necessary since application owns resource exclusively.
 
-#### LibOS to the Rescue
 
-Services provided by libraries that directly interface with the hardware, applications can own or share libraries amongst themselves, and libraries are better designed to cater to application specific needs. This minimizes the kernel's direct intervention and the amount of indirection but can lead to a less standardized interface that requires massive engineering effort. Requires kernel to undertake the responsibility of a resource arbiter.
+Libraries aren't conformed to any standards thus can be better designed to cater to application specific needs,  but this requires a massive engineering overall whenever API/ABI breaks. Therefore, it vital for applications to adhere to a standardized interface such as ones defined in POSIX in order to maintain compatibility and have the flexibility to augment features that can't be incorporated.
+
+Requires kernel to undertake the responsibility of a resource arbiter.
 
 #### Unikernel
 
-Unikernel does not have any bloat of the traditional operating system and provides an environment for applications to run. Due to the nature of its conservative design, smaller role. It promises better performance and security.
+Unikernel does not have any bloat of the traditional operating system and provides an minimalistic environment and a runtime with a singlular address space for applications to run. Single Address avoid mode switches between user and kernel modue. They're bundled with application along the libOS which, drastically reduces dependencies required unlike a traditional operating system which is intended to be multipurpose; has support for almost all. 
+
+Thus it provides us a viable candidate to develop suite of application isolated from each other, sharing different implementation of underlying libraries all the while lacking the bloat of the traditional VM instance.
 
 ### Overarching Idea
 
@@ -56,20 +63,26 @@ Virtual Interfaces are limited in number, and must be used conservatively.
 
 #### Anykernel & Rump Kernel
 
-Drivers are designed to run standalone and not tied to any OS Architecture. Rump Kernel provides a minimalistic environment for services to be compiled and run on top of a lightweight kernel. Is Archit N:1 non-preemptive scheduler NetBSD Drivers
+Rump Kernel is the Unikernel discussed, for POSIX compatibility, application receives call from program through libc which is handled by rump kernel. Rump kernel is the conceptual fruit of anykernel concept which aims for creating drivers that is OS agnostic.
+The Kernel interface with the hardware through rumprun.
 
 #### IOMMU
 
-You would have probably heard about Memory Management Unit when discussing the Process's Virtual Address Translation to Physical Address. Well, the same could be said for IOMMU which
+IOMMU is provides hardware security in addition to the numerable features it provides. PCI-E device are mapped to VMs which disallows out-of-bound memory access and interrupts. We route SR-IOV's virtual function in tandem with IOMMU.
+
+#### Hypervisor
 
 ### Design
 
+![Design](https://raw.githubusercontent.com/kanwaekan/kans-blog/main/6wd124.png)
 Libertt OS
-
-- Applications are run under a rumprun instance Isolated from each other under shared hardware.
-- Applications under the discretion of the _kernel_ can directly interface with hardware using VFs or indirectly using a proxy service under a virtual interface.
-- Scheduling: Rumprun instance can schedule its process under a Virtual CPU, which in turn is scheduled by the hypervisor.
-- Maintains POSIX/BSD API calls to avoid extensive reengineering efforts.
+POSIX Compatibility
+- Existing NetBSD drivers were ported are ran as rumpinstances, they are the *servers* in the microkernel.
+- Application are either provided with Virtual Interface or access to a PCI-E hardware through virtual function. Dynamic Switch involves support from the libOS and the microkernel/hypervisor without causing any noticiable interruption in application and service.
+- Applications are run under a rumprun instance Isolated from each other under shared hardware, usage of libc allows for a greater degree of compatability while under the hood, receiving benefits of a libOS.
+- Applications under the discretion of the kernel can directly interface with hardware using VFs or indirectly using a service under a virtual interface. This is exchange of information happens through IPC.
+- A Hypervisor assumes the role of a manager which apart from setting up and monitoring individual rumpinstances, provides access to Virtual Functions and aids in dynamic mode switch by maintain global data of IPs, interfaces etc.
+- Rumprun instances schedule its process under a Virtual CPU, which in turn is scheduled by the hypervisor.
 
 ### References:
 
